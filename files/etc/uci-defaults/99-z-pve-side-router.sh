@@ -30,27 +30,44 @@ uci set dhcp.lan.dhcpv6='disabled'
 uci set dhcp.lan.ra='disabled'
 uci set dhcp.lan.ndp='disabled'
 
-uci set firewall.lan.input='ACCEPT'
-uci set firewall.lan.output='ACCEPT'
-uci set firewall.lan.forward='ACCEPT'
-uci set firewall.lan.masq='1'
-uci set firewall.lan.mtu_fix='1'
-uci -q set firewall.wan.input='REJECT'
-uci -q set firewall.wan.output='ACCEPT'
-uci -q set firewall.wan.forward='REJECT'
+LAN_ZONE=$(uci show firewall | sed -n "s/^\(firewall\.@zone\[[0-9][0-9]*\]\)\.name='lan'$/\1/p" | head -n 1)
+WAN_ZONE=$(uci show firewall | sed -n "s/^\(firewall\.@zone\[[0-9][0-9]*\]\)\.name='wan'$/\1/p" | head -n 1)
+
+if [ -n "$LAN_ZONE" ]; then
+    uci set "$LAN_ZONE.input=ACCEPT"
+    uci set "$LAN_ZONE.output=ACCEPT"
+    uci set "$LAN_ZONE.forward=ACCEPT"
+    uci set "$LAN_ZONE.masq=1"
+    uci set "$LAN_ZONE.mtu_fix=1"
+fi
+
+if [ -n "$WAN_ZONE" ]; then
+    uci set "$WAN_ZONE.input=REJECT"
+    uci set "$WAN_ZONE.output=ACCEPT"
+    uci set "$WAN_ZONE.forward=REJECT"
+fi
 
 uci set dropbear.@dropbear[0].Interface='lan'
 uci set dropbear.@dropbear[0].PasswordAuth='on'
 uci set dropbear.@dropbear[0].RootPasswordAuth='on'
 
-uci -q set uhttpd.main.redirect_https='1'
+uci -q delete uhttpd.main.listen_http
+uci add_list uhttpd.main.listen_http='192.168.3.5:80'
+uci -q delete uhttpd.main.listen_https
+uci add_list uhttpd.main.listen_https='192.168.3.5:443'
+uci set uhttpd.main.redirect_https='1'
+
+uci -q set passwall.@global[0].enabled='0'
+uci -q set passwall.@global[0].localhost_proxy='0'
+uci -q set passwall.@global[0].client_proxy='0'
 
 uci commit system
 uci commit network
 uci commit dhcp
 uci commit firewall
 uci commit dropbear
-uci -q commit uhttpd
+uci commit uhttpd
+uci -q commit passwall
 
 if [ -x /etc/init.d/ttyd ]; then
     /etc/init.d/ttyd disable
@@ -61,6 +78,16 @@ if [ -x /etc/init.d/odhcpd ]; then
     /etc/init.d/odhcpd disable
     /etc/init.d/odhcpd stop
 fi
+
+# Several proxy core packages enable their generic init services during image
+# creation. PassWall launches the selected core itself, so keep every proxy
+# service stopped until a verified node and ACL are configured.
+for service in passwall haproxy sing-box xray; do
+    if [ -x "/etc/init.d/$service" ]; then
+        "/etc/init.d/$service" stop >/dev/null 2>&1 || true
+        "/etc/init.d/$service" disable
+    fi
+done
 
 {
     echo "Configured PVE side router at $(date)"
