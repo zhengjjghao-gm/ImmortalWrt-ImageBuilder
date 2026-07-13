@@ -54,11 +54,25 @@ PACKAGES="$PACKAGES luci-app-argon-config"
 PACKAGES="$PACKAGES luci-i18n-argon-config-zh-cn"
 #25.12
 PACKAGES="$PACKAGES luci-i18n-package-manager-zh-cn"
-PACKAGES="$PACKAGES luci-i18n-ttyd-zh-cn"
 PACKAGES="$PACKAGES openssh-sftp-server"
 
 # 文件管理器
 PACKAGES="$PACKAGES luci-i18n-filemanager-zh-cn"
+
+# PVE single-arm side-router proxy stack. Keep one transparent proxy frontend
+# to avoid DNS, nftables and TPROXY conflicts.
+PACKAGES="$PACKAGES luci-app-passwall luci-i18n-passwall-zh-cn"
+PACKAGES="$PACKAGES xray-core sing-box hysteria geoview chinadns-ng"
+PACKAGES="$PACKAGES kmod-nft-socket kmod-nft-tproxy kmod-tun kmod-inet-diag"
+
+# PVE integration, diagnostics and lightweight monitoring.
+PACKAGES="$PACKAGES qemu-ga ethtool ip-full iperf3 tcpdump htop nano"
+PACKAGES="$PACKAGES ca-bundle ca-certificates luci-ssl"
+PACKAGES="$PACKAGES luci-i18n-irqbalance-zh-cn luci-i18n-nlbwmon-zh-cn"
+
+# Web terminal is unnecessary on a LAN appliance and expands the attack
+# surface. Serial console and LAN-only SSH remain available.
+PACKAGES="$PACKAGES -ttyd -luci-app-ttyd -luci-i18n-ttyd-zh-cn"
 # ======== shell/apk-custom-packages.sh =======
 # 合并imm仓库以外的第三方插件 暂时注释
 PACKAGES="$PACKAGES $CUSTOM_PACKAGES"
