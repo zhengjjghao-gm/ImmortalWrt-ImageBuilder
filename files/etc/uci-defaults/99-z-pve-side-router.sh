@@ -82,7 +82,7 @@ fi
 # Several proxy core packages enable their generic init services during image
 # creation. PassWall launches the selected core itself, so keep every proxy
 # service stopped until a verified node and ACL are configured.
-for service in passwall haproxy sing-box xray; do
+for service in passwall passwall_server haproxy sing-box xray; do
     if [ -x "/etc/init.d/$service" ]; then
         "/etc/init.d/$service" stop >/dev/null 2>&1 || true
         "/etc/init.d/$service" disable
