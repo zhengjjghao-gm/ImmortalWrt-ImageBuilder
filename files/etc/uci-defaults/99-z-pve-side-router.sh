@@ -47,6 +47,13 @@ if [ -n "$WAN_ZONE" ]; then
     uci set "$WAN_ZONE.forward=REJECT"
 fi
 
+# Flow offload can bypass transparent-proxy nftables rules, and full-cone NAT
+# is unnecessary on a LAN-only single-arm side router.
+uci set firewall.@defaults[0].flow_offloading='0'
+uci set firewall.@defaults[0].flow_offloading_hw='0'
+uci set firewall.@defaults[0].fullcone='0'
+uci set firewall.@defaults[0].fullcone6='0'
+
 uci set dropbear.@dropbear[0].Interface='lan'
 uci set dropbear.@dropbear[0].PasswordAuth='on'
 uci set dropbear.@dropbear[0].RootPasswordAuth='on'
@@ -82,7 +89,7 @@ fi
 # Several proxy core packages enable their generic init services during image
 # creation. PassWall launches the selected core itself, so keep every proxy
 # service stopped until a verified node and ACL are configured.
-for service in passwall passwall_server haproxy sing-box xray; do
+for service in passwall passwall_server haproxy microsocks sing-box xray; do
     if [ -x "/etc/init.d/$service" ]; then
         "/etc/init.d/$service" stop >/dev/null 2>&1 || true
         "/etc/init.d/$service" disable
