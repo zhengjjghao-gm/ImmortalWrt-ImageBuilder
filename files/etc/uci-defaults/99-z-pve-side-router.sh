@@ -89,10 +89,15 @@ for service in passwall passwall_server haproxy sing-box xray; do
     fi
 done
 
+sysctl -w net.ipv4.conf.all.send_redirects=0 >/dev/null 2>&1 || true
+sysctl -w net.ipv4.conf.default.send_redirects=0 >/dev/null 2>&1 || true
+sysctl -w net.ipv4.conf.br-lan.send_redirects=0 >/dev/null 2>&1 || true
+
 {
     echo "Configured PVE side router at $(date)"
     echo "LAN=192.168.3.5/24 gateway=192.168.3.1"
     echo "DHCPv4/DHCPv6/RA=disabled"
+    echo "IPv4 ICMP redirects=disabled"
 } >"$LOGFILE"
 
 exit 0
