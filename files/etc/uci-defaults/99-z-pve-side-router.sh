@@ -55,8 +55,8 @@ uci set firewall.@defaults[0].fullcone='0'
 uci set firewall.@defaults[0].fullcone6='0'
 
 uci set dropbear.@dropbear[0].Interface='lan'
-uci set dropbear.@dropbear[0].PasswordAuth='on'
-uci set dropbear.@dropbear[0].RootPasswordAuth='on'
+uci set dropbear.@dropbear[0].PasswordAuth='off'
+uci set dropbear.@dropbear[0].RootPasswordAuth='off'
 
 uci -q delete uhttpd.main.listen_http
 uci add_list uhttpd.main.listen_http='192.168.3.5:80'
@@ -84,6 +84,13 @@ fi
 if [ -x /etc/init.d/odhcpd ]; then
     /etc/init.d/odhcpd disable
     /etc/init.d/odhcpd stop
+fi
+
+# The upstream image has no root password. Keep LuCI offline until the PVE
+# guest agent installs a strong password and the hardening script re-enables it.
+if [ -x /etc/init.d/uhttpd ]; then
+    /etc/init.d/uhttpd stop >/dev/null 2>&1 || true
+    /etc/init.d/uhttpd disable
 fi
 
 # Several proxy core packages enable their generic init services during image
